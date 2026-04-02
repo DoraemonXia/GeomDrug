@@ -1192,3 +1192,62 @@ def merge_fasta_files(fasta_files, output_filename):
                     output_file.write("\n".join(cleaned_lines) + "\n")
                 else:
                     output_file.write("\n".join(cleaned_lines))
+
+
+import requests
+from rdkit import Chem
+
+def get_smiles_from_ccd(ccd_id: str) -> str | None:
+    query = """
+    query ($id: String!) {
+      chem_comp(comp_id: $id) {
+        pdbx_chem_comp_descriptor {
+          type
+          program
+          descriptor
+        }
+      }
+    }
+    """
+
+    resp = requests.post(
+        "https://data.rcsb.org/graphql",
+        json={"query": query, "variables": {"id": ccd_id.upper()}},
+        timeout=30
+    )
+    resp.raise_for_status()
+    data = resp.json()
+
+    descs = data["data"]["chem_comp"]["pdbx_chem_comp_descriptor"]
+
+    smiles = None
+
+    # 1️⃣ OpenEye Canonical（优先）
+    for x in descs:
+        if x.get("type") == "SMILES_CANONICAL" and x.get("program") == "OpenEye OEToolkits":
+            smiles = x["descriptor"]
+            break
+
+    # 2️⃣ fallback：任意 Canonical
+    if smiles is None:
+        for x in descs:
+            if x.get("type") == "SMILES_CANONICAL":
+                smiles = x["descriptor"]
+                break
+
+    # 3️⃣ fallback：普通 SMILES
+    if smiles is None:
+        for x in descs:
+            if x.get("type") == "SMILES":
+                smiles = x["descriptor"]
+                break
+
+    if smiles is None:
+        return None
+
+    # 🔥 统一标准化（关键一步）
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        return None
+
+    return Chem.MolToSmiles(mol, canonical=True)
