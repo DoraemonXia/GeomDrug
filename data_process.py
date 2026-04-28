@@ -8,19 +8,19 @@ def get_true_positive_rate_under_thresholds(probs, label):
     probs = np.array(probs)
     label = np.array(label)
 
-    thresholds = np.linspace(0, 1, 101)  # 在0到1之间平均取100个点作为阈值
-    positive_probs = []  # 存储大于阈值的正样本概率
+    thresholds = np.linspace(0, 1, 101)  # Generate 100 evenly-spaced thresholds between 0 and 1
+    positive_probs = []  # Store the true positive rate at each threshold
 
     for threshold in thresholds:
-        # 预测为正的样本
+        # Samples predicted as positive
         predicted_positive_indices = np.where(probs > threshold)[0]
 
         true_positive_count = np.sum(label[predicted_positive_indices] == 1)
 
-        # 预测为正的样本数量
+        # Count of samples predicted as positive
         predicted_positive_count = len(predicted_positive_indices)
 
-        # 计算真正为正样本的比率
+        # Compute the true positive rate
         true_positive_rate = true_positive_count / predicted_positive_count if predicted_positive_count > 0 else 0
         
         positive_probs.append(true_positive_rate)
@@ -35,14 +35,15 @@ just get_true_positive_rate_under_thresholds( probs, label )
 
 def add_gaussian_noise(matrix, scale_factor=0.35):
     """
-    给矩阵添加高斯噪声，噪声的标准差根据矩阵值乘以scale_factor。
-    
+    Add Gaussian noise to a matrix. The noise standard deviation is scaled by
+    each matrix element multiplied by scale_factor.
+
     Parameters:
-    - matrix: 输入的矩阵 (numpy array)
-    - scale_factor: 控制噪声大小的比例因子，默认为0.05。
-    
+    - matrix: Input matrix (numpy array).
+    - scale_factor: Scaling factor controlling noise magnitude. Default is 0.35.
+
     Returns:
-    - noisy_matrix: 添加噪声后的矩阵 (numpy array)
+    - noisy_matrix: Matrix with added noise (numpy array).
     """
     noise = np.random.normal(0, scale_factor * np.abs(matrix), matrix.shape)
     noisy_matrix = matrix + noise

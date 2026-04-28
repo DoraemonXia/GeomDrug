@@ -18,17 +18,17 @@ from biotite.structure import AtomArray, filter_backbone,filter_amino_acids
 
 def contains_functional_group(molecule_smiles, functional_group_smarts):
     """
-    判断给定的分子是否包含指定的官能团。
+    Determine whether a given molecule contains a specified functional group.
 
-    :param molecule_smiles: 分子的 SMILES 表示
-    :param functional_group_smarts: 官能团的 SMARTS 表示
-    :return: 如果包含该官能团，返回 True；否则返回 False
+    :param molecule_smiles: SMILES representation of the molecule.
+    :param functional_group_smarts: SMARTS representation of the functional group.
+    :return: True if the molecule contains the functional group, False otherwise.
     """
-    # 创建分子和官能团的分子对象
+    # Create molecule and functional group objects
     molecule = Chem.MolFromSmiles(molecule_smiles)
     functional_group = Chem.MolFromSmarts(functional_group_smarts)
-    
-    # 使用 SubstructMatch 判断分子是否包含官能团
+
+    # Use substructure matching to test for the functional group
     if molecule.HasSubstructMatch(functional_group):
         return True
     else:
@@ -101,7 +101,8 @@ generate_fasta(rna_sequences, names, fasta_file_path='output.fasta', reverse=Tru
 '''
 
 
-# 合并文件夹下的fasta文件, sequence_index可指定None或fasta文件的第几个序列.(在proteinmpnn/ligandmpnn生成序列时会用到)
+# Merge FASTA files from a directory. sequence_index can be None or the index of a specific
+# sequence to extract from each FASTA file. (Useful when generating sequences with ProteinMPNN/LigandMPNN.)
 import os
 from Bio import SeqIO
 
@@ -332,7 +333,7 @@ def extract_backbone_atoms(pdb_file, output_dir):
         print(f"No backbone atoms found in chain {chain_id}.")
         return
 
-    pdb_base_name = os.path.basename(pdb_file).split('.')[0]  # 获取文件名，不含扩展名
+    pdb_base_name = os.path.basename(pdb_file).split('.')[0]  # Extract filename without extension
     output_pdb = os.path.join(output_dir, f"{pdb_base_name}_{chain_id}.pdb")
 
     pr.writePDB(output_pdb, backbone_atoms)
@@ -340,8 +341,8 @@ def extract_backbone_atoms(pdb_file, output_dir):
 
 '''
 Example Usage
-pdb_file = "/xcfhome/ypxia/Workspace/Combs/data/PDB_Download/1a2p.pdb"  # 输入的PDB文件路径
-output_dir = '/xcfhome/ypxia/Workspace/esm/esm/Origin_backbone/'  # 输出文件夹路径
+pdb_file = "/xcfhome/ypxia/Workspace/Combs/data/PDB_Download/1a2p.pdb"  # Path to the input PDB file
+output_dir = '/xcfhome/ypxia/Workspace/esm/esm/Origin_backbone/'  # Path to the output directory
 extract_backbone_atoms(pdb_file, output_dir)
 '''
 
@@ -355,7 +356,7 @@ def split_fasta(input_fasta, output_dir, chunk_size=100):
     Split fasta files
     """
     if not os.path.exists(output_dir):
-        os.makedirs(output_dir)  # 创建输出目录
+        os.makedirs(output_dir)  # Create the output directory
 
     base_name = os.path.basename(input_fasta)
     name, ext = os.path.splitext(base_name)
@@ -370,8 +371,8 @@ def split_fasta(input_fasta, output_dir, chunk_size=100):
 
 '''
 # Example usage:
-input_fasta = "output.fasta"  # 输入的FASTA文件路径
-output_dir = "output/"  # 输出目录
+input_fasta = "output.fasta"  # Path to the input FASTA file
+output_dir = "output/"  # Output directory
 split_fasta(input_fasta, output_dir)
 '''
 
@@ -531,7 +532,7 @@ def smiles_to_png(smiles, output_file):
     new_data = []
     for item in datas:
         if item[0] == 255 and item[1] == 255 and item[2] == 255:
-            new_data.append((255, 255, 255, 0))  # 将白色背景设置为透明
+            new_data.append((255, 255, 255, 0))  # Set white background to transparent
         else:
             new_data.append(item)
     img.putdata(new_data)
@@ -556,7 +557,7 @@ def save_multiple_conformers_to_sdf(smiles, num_confs=100, output_file='output.s
     params = AllChem.ETKDG()
     conf_ids = AllChem.EmbedMultipleConfs(mol, numConfs=num_confs, params=params)
     
-    # 优化每个构象
+    # Optimize each conformer
     results = AllChem.UFFOptimizeMoleculeConfs(mol, numThreads=4)
 
     writer = Chem.SDWriter(output_file)
@@ -568,7 +569,7 @@ def save_multiple_conformers_to_sdf(smiles, num_confs=100, output_file='output.s
 
 '''
 # Example usage:
-smiles = "Cc1ccc(CNC(c2nccn2C)c2ccc(F)cc2)cc1C"  # 示例SMILES
+smiles = "Cc1ccc(CNC(c2nccn2C)c2ccc(F)cc2)cc1C"  # Example SMILES
 save_multiple_conformers_to_sdf(smiles, num_confs=100, output_file='mol_0.sdf')
 '''
 
@@ -608,22 +609,22 @@ def convert_pdb_to_sdf(input_folder):
     '''
     Leverage obabel to transform mol.pdb to sdf.
     '''
-    failed_conversions = []  # 存储转换失败的文件名
+    failed_conversions = []  # Store names of files that failed to convert
 
-    # 遍历文件夹中的所有文件
+    # Iterate over all files in the directory
     for filename in os.listdir(input_folder):
-        # 检查文件是否以 .pdb 结尾
+        # Check if the file has a .pdb extension
         if filename.endswith(".pdb"):
             pdb_file = os.path.join(input_folder, filename)
             sdf_file = os.path.join(input_folder, filename.replace(".pdb", ".sdf"))
-            
-            # 构建 Open Babel 命令
+
+            # Build the Open Babel command
             command = f"obabel -i pdb {pdb_file} -o sdf -O {sdf_file}"
-            
-            # 执行命令并检查返回值
+
+            # Execute the command and check the return value
             result = os.system(command)
             if result != 0:
-                # 如果命令执行失败，记录文件名
+                # If the command failed, record the filename
                 failed_conversions.append(filename)
                 print(f"Failed to convert {pdb_file}")
             else:
@@ -633,7 +634,7 @@ def convert_pdb_to_sdf(input_folder):
 
 '''
 # Example usage:
-input_folder = "source_data/Hariboss/mol/"  # 替换为你的 PDB 文件所在的文件夹
+input_folder = "source_data/Hariboss/mol/"  # Replace with your PDB folder path
 failed_files = convert_pdb_to_sdf(input_folder)
 '''
 
@@ -646,15 +647,15 @@ I think its' mean just use obabel to add bonds.
 from rdkit.Chem import rdmolfiles
 def save_mol_to_pdb(mol, filename):
     """
-    将 RDKit 的 mol 对象保存为 PDB 格式文件。
+    Save an RDKit Mol object to a PDB format file.
 
-    :param mol: RDKit 的 mol 对象
-    :param filename: 保存的文件名（包括路径）
+    :param mol: RDKit Mol object.
+    :param filename: Output filename (including path).
     """
     if mol is None:
         raise ValueError("Invalid molecule object.")
-    
-    # 保存为 PDB 文件
+
+    # Write to PDB file
     with open(filename, 'w') as pdb_file:
         pdb_block = Chem.MolToPDBBlock(mol)
         pdb_file.write(pdb_block)
@@ -664,14 +665,15 @@ from Bio.PDB import MMCIFParser
 
 def extract_ligand_info_from_cif(cif_file, ligand_name, chain_id="A" ):
     """
-    从 CIF 文件中提取指定配体的原子信息。
-    
-    参数:
-    - cif_file: CIF 文件的路径
-    - ligand_name: 配体的名称
-    
-    返回:
-    - ligand_info: 一个包含配体原子信息的字典
+    Extract atom information for a specified ligand from a CIF file.
+
+    Parameters:
+    - cif_file: Path to the CIF file.
+    - ligand_name: Name of the ligand.
+    - chain_id: Chain identifier to search within. Default is "A".
+
+    Returns:
+    - mol: RDKit Mol object with 3D coordinates of the ligand atoms.
     """
     parser = MMCIFParser(QUIET=True)
     structure = parser.get_structure("structure", cif_file)[0]
@@ -688,25 +690,25 @@ def extract_ligand_info_from_cif(cif_file, ligand_name, chain_id="A" ):
                 if residue.resname == ligand_name and not_found_residue:
                     not_found_residue = False
                     for atom in residue.get_atoms():
-                        atom_name = atom.get_id()  # 提取原子名
-                        residue_name = residue.get_resname()  # 提取残基名
-                        x, y, z = atom.get_coord()  # 提取坐标
+                        atom_name = atom.get_id()  # Extract atom name
+                        residue_name = residue.get_resname()  # Extract residue name
+                        x, y, z = atom.get_coord()  # Extract coordinates
                         atoms.append((atom_name, residue_name, x, y, z))
-                    
-                        
+
+
     mol = Chem.RWMol()
-    
-    # add atoms
+
+    # Add atoms
     atom_indices = {}
     for idx, (atom_name, residue_name, x, y, z) in enumerate(atoms):
         atom_idx = mol.AddAtom(Chem.Atom(atom_name[0]))
         atom_indices[idx] = atom_idx
-    
-    # 添加坐标
+
+    # Add coordinates
     conf = Chem.Conformer(mol.GetNumAtoms())
     for idx, (atom_name, residue_name, x, y, z) in enumerate(atoms):
         conf.SetAtomPosition(atom_indices[idx], (float(x), float(y), float(z)))
-    
+
     mol.AddConformer(conf)
     return mol
 
@@ -724,20 +726,20 @@ from Bio.PDB import MMCIFParser, PDBIO, Select
 
 def extract_rna_atoms_from_cif(cif_file, chain_id=-1):
     """
-    从 CIF 文件中提取指定链或所有链上的 RNA 原子的列表，并生成可用于创建新 PDB 文件的结构。
-    
-    参数:
-    - cif_file: CIF 文件的路径
-    - chain_id: 要提取的链的 ID。如果为 -1，提取所有链上的 RNA 原子。
-    
-    返回:
-    - rna_atoms: 一个包含指定链上 RNA 原子的列表
+    Extract RNA atoms from a specified chain (or all chains) in a CIF file.
+
+    Parameters:
+    - cif_file: Path to the CIF file.
+    - chain_id: Chain identifier to extract. If -1, extract RNA atoms from all chains.
+
+    Returns:
+    - rna_atoms: A list of RNA atom objects from the specified chain(s).
     """
     parser = MMCIFParser(QUIET=True)
     structure = parser.get_structure("structure", cif_file)[0]
 
     rna_atoms = []
-    rna_bases = {"A", "U", "C", "G"}  # RNA 的四种碱基
+    rna_bases = {"A", "U", "C", "G"}  # The four RNA bases
 
     for chain in structure:
         if chain_id != -1 and chain.id != chain_id:
@@ -747,16 +749,16 @@ def extract_rna_atoms_from_cif(cif_file, chain_id=-1):
             if residue.resname in rna_bases:
                 for atom in residue.get_atoms():
                     rna_atoms.append(atom)
-    
+
     return rna_atoms
 
 def save_atoms_to_pdb_simple(atoms, output_file):
     """
-    将提取的 RNA 原子保存为 PDB 文件（简化版）。
-    
-    参数:
-    - atoms: 包含 RNA 原子的列表
-    - output_file: 保存的 PDB 文件路径
+    Save extracted RNA atoms to a PDB file (simplified format).
+
+    Parameters:
+    - atoms: List of RNA atom objects.
+    - output_file: Path for the output PDB file.
     """
     with open(output_file, 'w') as pdb_file:
         for i, atom in enumerate(atoms, start=1):
@@ -776,7 +778,8 @@ rna_atoms = extract_rna_atoms_from_cif(cif_file, chain_id=-1)
 output_pdb_file = "rna_chain_A.pdb"
 save_atoms_to_pdb_simple(rna_atoms, output_pdb_file)
 
-extract_rna_atoms_from_cif  这个有时候会出现读不到原子的情况,所以需要重新下载pdb,然后重新读pdb
+# Note: extract_rna_atoms_from_cif may occasionally fail to read atoms. If this occurs,
+# re-download the PDB file and re-parse as PDB instead.
 
 '''
 
@@ -785,12 +788,13 @@ import os
 import requests
 def download_pdb_files(pdb_ids, output_folder, timeout=600):
     """
-    批量下载指定 PDB ID 的 PDB 文件到指定文件夹。如果PDB文件下载失败，则尝试下载CIF文件。
+    Batch download PDB files for the given PDB IDs to the specified folder.
+    If a PDB download fails, fall back to downloading the CIF file.
 
-    参数:
-    - pdb_ids (list of str): PDB ID 列表。
-    - output_folder (str): 下载的 PDB 文件保存的文件夹路径。
-    - timeout (int): 下载等待时间（秒），默认为600秒。
+    Parameters:
+    - pdb_ids (list of str): List of PDB IDs.
+    - output_folder (str): Path to the directory for saving downloaded files.
+    - timeout (int): Download timeout in seconds. Default is 600.
     """
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
@@ -810,28 +814,28 @@ def download_pdb_files(pdb_ids, output_folder, timeout=600):
                 file_path = os.path.join(output_folder, f"{pdb_id}.pdb")
                 with open(file_path, "wb") as f:
                     f.write(response.content)
-                print(f"{pdb_id}.pdb 已下载并保存到 {file_path}")
+                print(f"{pdb_id}.pdb downloaded and saved to {file_path}")
             else:
-                print(f"下载 {pdb_id}.pdb 失败，状态码: {response.status_code}")
-                # 尝试下载 CIF 文件
+                print(f"Download of {pdb_id}.pdb failed, status code: {response.status_code}")
+                # Try downloading the CIF file instead
                 download_cif_file(cif_url, pdb_id, output_folder, timeout)
 
         except requests.exceptions.Timeout:
-            print(f"下载 {pdb_id}.pdb 超时，尝试下载 CIF 文件。")
+            print(f"Download of {pdb_id}.pdb timed out. Attempting CIF download.")
             download_cif_file(cif_url, pdb_id, output_folder, timeout)
         except requests.exceptions.RequestException as e:
-            print(f"下载 {pdb_id}.pdb 出现错误: {e}，尝试下载 CIF 文件。")
+            print(f"Error downloading {pdb_id}.pdb: {e}. Attempting CIF download.")
             download_cif_file(cif_url, pdb_id, output_folder, timeout)
 
 def download_cif_file(url, pdb_id, output_folder, timeout):
     """
-    尝试下载CIF文件。
+    Attempt to download a CIF file.
 
-    参数:
-    - url (str): CIF 文件的下载链接。
-    - pdb_id (str): PDB ID，用于命名文件。
-    - output_folder (str): 下载的文件保存的文件夹路径。
-    - timeout (int): 下载等待时间（秒）。
+    Parameters:
+    - url (str): Download URL for the CIF file.
+    - pdb_id (str): PDB ID used for naming the file.
+    - output_folder (str): Path to the directory for saving downloaded files.
+    - timeout (int): Download timeout in seconds.
     """
     try:
         response = requests.get(url, timeout=timeout)
@@ -839,42 +843,42 @@ def download_cif_file(url, pdb_id, output_folder, timeout):
             file_path = os.path.join(output_folder, f"{pdb_id}.cif")
             with open(file_path, "wb") as f:
                 f.write(response.content)
-            print(f"{pdb_id}.cif 已下载并保存到 {file_path}")
+            print(f"{pdb_id}.cif downloaded and saved to {file_path}")
         else:
-            print(f"下载 {pdb_id}.cif 失败，状态码: {response.status_code}")
+            print(f"Download of {pdb_id}.cif failed, status code: {response.status_code}")
     except requests.exceptions.Timeout:
-        print(f"下载 {pdb_id}.cif 超时，跳过此文件。")
+        print(f"Download of {pdb_id}.cif timed out. Skipping this file.")
     except requests.exceptions.RequestException as e:
-        print(f"下载 {pdb_id}.cif 出现错误: {e}")
+        print(f"Error downloading {pdb_id}.cif: {e}")
 
 '''
 Example Usage
-download_pdb_files(["5afi"], "source_data/Hariboss/pdb/")  #默认下载pdb,不提供pdb的情况下则下载cif
+download_pdb_files(["5afi"], "source_data/Hariboss/pdb/")  # Downloads PDB by default; falls back to CIF if PDB is unavailable
 '''
 
-#保存完RNA简化的分子后，下一步需要将其转化为需要的坐标列表
+# After saving the simplified RNA molecule, the next step is to convert it into coordinate lists.
 from Bio.PDB import PDBParser
 
 def load_rna_bases_from_pdb(file_path, return_seq=False, chain_id=-1):
     """
-    从PDB文件中加载RNA碱基并返回每个碱基对应的原子列表。
-    
-    参数:
-    - file_path (str): PDB文件的路径。
-    - return_seq (bool): 是否返回序列信息。如果为True，则返回序列。
-    - chain_id (str/int): 要提取的链的 ID。如果为-1，提取所有链上的 RNA 原子。
+    Load RNA bases from a PDB file and return the atom list for each base.
 
-    返回:
-    - base_atoms (dict): 每个碱基的原子列表，键为碱基ID（序号+碱基名，如 17_G），值为原子坐标的列表。
-    - rna_sequences (list): 如果return_seq为True，则返回序列信息列表。
+    Parameters:
+    - file_path (str): Path to the PDB file.
+    - return_seq (bool): If True, also return sequence information.
+    - chain_id (str/int): Chain identifier to extract. If -1, extract RNA atoms from all chains.
+
+    Returns:
+    - base_atoms (dict): Atom coordinates per base, keyed by base ID (e.g., "17_G").
+    - rna_sequences (list): Sequence information per chain (only if return_seq is True).
     """
     parser = PDBParser(QUIET=True)
     structure = parser.get_structure("structure", file_path)
 
     base_atoms = {}
-    rna_sequences = []  # 存储每条链的序列信息
-    rna_bases = {"A", "U", "C", "G"}  # RNA 的四种碱基
-    index = 1  # 用于生成序号
+    rna_sequences = []  # Store sequence information per chain
+    rna_bases = {"A", "U", "C", "G"}  # The four RNA bases
+    index = 1  # Sequential index counter
 
     for model in structure:
         for chain in model:
@@ -885,7 +889,7 @@ def load_rna_bases_from_pdb(file_path, return_seq=False, chain_id=-1):
             for residue in chain:
                 resname = residue.get_resname().strip()
                 if resname in rna_bases:
-                    base_id = f"{index}_{resname}"  # 生成序号+碱基名的ID
+                    base_id = f"{index}_{resname}"  # Construct base ID as index_resname
                     atoms = [atom.get_coord() for atom in residue]
                     base_atoms[base_id] = atoms
                     if return_seq:
@@ -906,26 +910,26 @@ import gemmi
 
 def load_rna_bases(file_path, return_seq=False, chain_id=-1):
     """
-    从 PDB 或 CIF 文件中加载 RNA 碱基信息，每个碱基返回一个原子坐标矩阵。
-    
-    参数:
-    - file_path (str): PDB 或 CIF 文件路径。
-    - return_seq (bool): 是否返回序列信息。如果为 True，则返回序列。
-    - chain_id (str/int): 要提取的链 ID。如果为 -1，提取所有链上的 RNA 碱基和原子。
+    Load RNA base information from a PDB or CIF file, returning an atom coordinate matrix per base.
 
-    返回:
-    - base_atoms (dict): 每个碱基的原子坐标矩阵（NumPy 数组），键为碱基ID（如 17_G），值为坐标矩阵。
-    - rna_sequences (dict): 每条链的 RNA 碱基序列（可选，键为链 ID）。
+    Parameters:
+    - file_path (str): Path to the PDB or CIF file.
+    - return_seq (bool): If True, also return sequence information.
+    - chain_id (str/int): Chain identifier to extract. If -1, extract RNA bases from all chains.
+
+    Returns:
+    - base_atoms (dict): Atom coordinate matrix (NumPy array) per base, keyed by base ID (e.g., "17_G").
+    - rna_sequences (dict): RNA base sequence per chain (optional; keyed by chain ID).
     """
     def parse_pdb(file_path):
         parser = PDBParser(QUIET=True)
         structure = parser.get_structure("structure", file_path)
-        
+
         base_atoms = {}
         rna_sequences = {}
-        rna_bases = {"A", "U", "C", "G"}  # RNA 的碱基
-        index = 1  # 用于生成序号
-        
+        rna_bases = {"A", "U", "C", "G"}  # The four RNA bases
+        index = 1  # Sequential index counter
+
         for model in structure:
             for chain in model:
                 if chain_id != -1 and chain.id != chain_id:
@@ -935,11 +939,11 @@ def load_rna_bases(file_path, return_seq=False, chain_id=-1):
                 for residue in chain:
                     resname = residue.get_resname().strip()
                     if resname in rna_bases:
-                        base_id = f"{index}_{resname}"  # 生成序号+碱基名的 ID
+                        base_id = f"{index}_{resname}"  # Construct base ID as index_resname
                         coordinates = [
                             atom.get_coord() for atom in residue
                         ]
-                        base_atoms[base_id] = np.array(coordinates)  # 转为 NumPy 数组
+                        base_atoms[base_id] = np.array(coordinates)  # Convert to NumPy array
                         chain_seq.append(resname)
                         index += 1
 
@@ -950,17 +954,17 @@ def load_rna_bases(file_path, return_seq=False, chain_id=-1):
             return base_atoms, rna_sequences
         else:
             return base_atoms
-    
+
     def parse_cif(file_path):
         doc = gemmi.cif.read_file(file_path)
-        block = doc[0]  # 默认取第一个 block
+        block = doc[0]  # Use the first block by default
         structure = gemmi.make_structure_from_block(block)
-        
+
         base_atoms = {}
         rna_sequences = {}
-        rna_bases = {"A", "U", "C", "G"}  # RNA 的碱基
-        index = 1  # 用于生成序号
-        
+        rna_bases = {"A", "U", "C", "G"}  # The four RNA bases
+        index = 1  # Sequential index counter
+
         for model in structure:
             for chain in model:
                 if chain_id != -1 and chain.name != chain_id:
@@ -969,11 +973,11 @@ def load_rna_bases(file_path, return_seq=False, chain_id=-1):
                 chain_seq = []
                 for residue in chain:
                     if residue.name in rna_bases:
-                        base_id = f"{index}_{residue.name}"  # 生成序号+碱基名的 ID
+                        base_id = f"{index}_{residue.name}"  # Construct base ID as index_resname
                         coordinates = [
                             [atom.pos.x, atom.pos.y, atom.pos.z] for atom in residue
                         ]
-                        base_atoms[base_id] = np.array(coordinates)  # 转为 NumPy 数组
+                        base_atoms[base_id] = np.array(coordinates)  # Convert to NumPy array
                         chain_seq.append(residue.name)
                         index += 1
 
@@ -989,36 +993,36 @@ def load_rna_bases(file_path, return_seq=False, chain_id=-1):
     elif file_path.endswith(".cif"):
         return parse_cif(file_path)
     else:
-        raise ValueError("文件格式不支持，仅支持 PDB 和 CIF 格式！")
+        raise ValueError("Unsupported file format. Only PDB and CIF formats are supported.")
 
-#配套对应的
+# Corresponding utility: convert the base_atoms dict to a matrix representation.
 def convert_base_atoms_to_matrix(base_atoms):
-    # 对每个碱基，提取原子坐标并将其转换为矩阵
+    # For each base, extract atom coordinates and convert to a matrix
     base_matrices = {}
     for base_key, atom_coords in base_atoms.items():
-        # 将 atom_coords 列表转换为 n*3 的矩阵
+        # Convert atom_coords list to an n*3 matrix
         base_matrix = np.array(atom_coords)
         base_matrices[base_key] = base_matrix
     return base_matrices
 
-#对应计算其接触矩阵的函数
+# Corresponding function: compute the contact (distance) matrix.
 import numpy as np
 def calculate_min_distance_matrix(base_atoms, mol_coords):
-    # 初始化距离矩阵
+    # Initialize the distance matrix
     num_bases = len(base_atoms)
     num_mol_atoms = len(mol_coords)
     distance_matrix = np.zeros((num_bases, num_mol_atoms))
-    
-    # 遍历每个碱基
+
+    # Iterate over each RNA base
     for i, (base_key, base_coords) in enumerate(base_atoms.items()):
-        # 遍历分子中的每个原子
+        # Iterate over each atom in the molecule
         for j, mol_coord in enumerate(mol_coords):
-            # 计算分子原子与当前碱基中所有原子的距离
+            # Compute the distance between the molecule atom and all atoms in the current base
             distances = np.linalg.norm(base_coords - mol_coord, axis=1)
-            # 取最短距离
+            # Take the minimum distance
             min_distance = np.min(distances)
             distance_matrix[i, j] = min_distance
-    
+
     return distance_matrix
 
 '''
@@ -1082,22 +1086,22 @@ def convert_pdb_to_sdf(input_folder):
     '''
     Transform .pdb files into .sdf files in a specific folder.
     '''
-    failed_conversions = []  # 存储转换失败的文件名
+    failed_conversions = []  # Store names of files that failed to convert
 
-    # 遍历文件夹中的所有文件
+    # Iterate over all files in the directory
     for filename in os.listdir(input_folder):
-        # 检查文件是否以 .pdb 结尾
+        # Check if the file has a .pdb extension
         if filename.endswith(".pdb"):
             pdb_file = os.path.join(input_folder, filename)
             sdf_file = os.path.join(input_folder, filename.replace(".pdb", ".sdf"))
-            
-            # 构建 Open Babel 命令
+
+            # Build the Open Babel command
             command = f"obabel -i pdb {pdb_file} -o sdf -O {sdf_file} -d"   # -d is used to remove H atoms.
-            
-            # 执行命令并检查返回值
+
+            # Execute the command and check the return value
             result = os.system(command)
             if result != 0:
-                # 如果命令执行失败，记录文件名
+                # If the command failed, record the filename
                 failed_conversions.append(filename)
                 print(f"Failed to convert {pdb_file}")
             else:
@@ -1107,7 +1111,7 @@ def convert_pdb_to_sdf(input_folder):
 
 '''
 Example Usage
-input_folder = "source_data/Hariboss/mol/"  # 替换为你的 PDB 文件所在的文件夹
+input_folder = "source_data/Hariboss/mol/"  # Replace with your PDB folder path
 failed_files = convert_pdb_to_sdf(input_folder)
 '''
 
@@ -1124,7 +1128,7 @@ def calc_identity(seq1, seq2):
 Example Usage
 seq1 = "ACGTACGTACGT"
 seq2 = "ACGTTCGTACGT"
-print(f"相似度为: {calc_identity(seq1, seq2):.2f}%")
+print(f"Sequence identity: {calc_identity(seq1, seq2):.2f}%")
 '''
 
 
@@ -1164,13 +1168,13 @@ def get_hetatm_residues(cif_file):
     structure = parser.get_structure('structure_id', cif_file)
     het_residues = set()
     
-    # 只取第一个model（索引从0开始）
+    # Take only the first model (0-indexed)
     model = structure[0]
-    
+
     for chain in model:
         for residue in chain:
-            # 直接判断残基是否为异质原子（HETATM）
-            if residue.id[0].strip() != '':  # hetero标志位非空则为HETATM
+            # Determine whether the residue is a hetero-atom (HETATM)
+            if residue.id[0].strip() != '':  # Non-empty hetero flag indicates HETATM
                 het_residues.add(residue.resname.strip())
     
     return het_residues
@@ -1222,20 +1226,20 @@ def get_smiles_from_ccd(ccd_id: str) -> str | None:
 
     smiles = None
 
-    # 1️⃣ OpenEye Canonical（优先）
+    # (1) OpenEye canonical SMILES (highest priority)
     for x in descs:
         if x.get("type") == "SMILES_CANONICAL" and x.get("program") == "OpenEye OEToolkits":
             smiles = x["descriptor"]
             break
 
-    # 2️⃣ fallback：任意 Canonical
+    # (2) Fallback: any canonical SMILES
     if smiles is None:
         for x in descs:
             if x.get("type") == "SMILES_CANONICAL":
                 smiles = x["descriptor"]
                 break
 
-    # 3️⃣ fallback：普通 SMILES
+    # (3) Fallback: generic SMILES
     if smiles is None:
         for x in descs:
             if x.get("type") == "SMILES":
@@ -1245,7 +1249,7 @@ def get_smiles_from_ccd(ccd_id: str) -> str | None:
     if smiles is None:
         return None
 
-    # 🔥 统一标准化（关键一步）
+    # Standardize to canonical SMILES (critical step)
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
         return None

@@ -1,7 +1,7 @@
 import subprocess
 import os
 
-# 获取显卡信息并解析
+# Query GPU information and parse results
 def find_max_gpu(file_path):
     '''
     find and set gpu to max memory
@@ -12,10 +12,10 @@ def find_max_gpu(file_path):
         text=True
     )
 
-    # 将输出拆分为行
+    # Split the output into lines
     gpu_info = result.stdout.strip().split('\n')
 
-    # 解析每行数据并找到剩余显存最大的GPU ID
+    # Parse each line and identify the GPU with the most free memory
     max_mem_gpu_id = max(gpu_info, key=lambda x: int(x.split(',')[1])).split(',')[0]
 
     os.environ['CUDA_VISIBLE_DEVICES'] = max_mem_gpu_id
